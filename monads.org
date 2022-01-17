@@ -1,0 +1,140 @@
+#+TITLE: Modeling and Reasoning about Effects
+#+AUTHOR: Ashton Wiersdorf
+#+DATE: 2022-01-18
+
+* Motivation
+
+Consider what this function does:
+
+#+begin_src python
+  def compute_taxes(statements_filename, tax_rate):
+      # Read the statements into a list of lines
+      statements = read_file_lines(statements_filename)
+
+      total = 0
+      for stmt in statements:
+          total += stmt.value
+
+      print(f"Total: {total}; does this look right? (y/N) ")
+      proceedp = confirm()
+
+      if proceedp:
+          return total * tax_rate
+      else:
+          print("Aborting!")
+          exit(1)
+#+end_src
+
+What does this function do?
+
+ - returns a number
+ - aborts the program
+ - blows up from reading a nonexistent file
+ - modifies some memory in the ~for~ loop
+
+These are called "effects": they're things that happen along side the computation of a value.
+
+This is important when we work with languages that are "pure": everything expression has a value. In languages like Python, you can create valid pieces of a program that /do not/ have any value. E.g.:
+
+#+begin_src python
+  total = 0
+  for stmt in statements:
+      total += stmt.value
+#+end_src
+
+Those three lines *do* something: they modify some block of memory. But they don't give back a value to the context in which they're evaluated. There's nothing explicit that tells us what's going on.
+
+Likewise, there's nothing about the ~read_file_lines~ function that tells us what it does in the case of a nonexistent file: does it blow up? does it return an empty list? Both could be bad if we don't know what to expect. Since there's nothing here in the code, we have to go look at the documentation for ~read_file_lines~.
+
+** Effects in programs
+
+ - IO
+
+   Without IO, programs are just little boxes that get hot.
+
+ - Errors
+
+   What happens if our code blows up? (E.g. we try to divide by zero or read a non-existent file?)
+
+ - Non-determinism
+
+   If we can do a computation with one result, why can't we do it for many (possible) results?
+
+ - Logging
+
+   (Maybe briefly share anecdote about traces at Spiff.)
+
+We would like to model these kinds of effects /orthogonal/ to the rest of our program. This both allows us to reason about our program and effects separately, and lets us change one without worrying about the impact on the other. (More or less.)
+
+It's a way of slicing a program that most of us aren't used to. (OO hype still hasn't been flushed out of higher ed yet.)
+
+** Example of a web server
+
+* The naked monad
+
+I used to be confused about monads because I couldn't figure out what it /was/. I didn't have a good mental model. No, it's not a box or a burrito. I'll tell you what it is: it's a mathematical construct.
+
+A vector space is a set of objects; the set has some notion of addition and is closed thereunder, and it also has some notion of scalar multiplication.[fn:1] There are some [[https://en.wikipedia.org/wiki/Vector_space#Notation_and_definition][rules]] that must hold like the associativity and commutativity of vector addition, as well as some others.
+
+Consider a ring. A ring is a set equipped with two binary operations that satisfy certain requirements. The ring ℤₙ, when n is prime, is a good example of a ring: we have notions of addition and multiplication that behave predictably.
+
+Since these structures follow certain rules, we can prove things about them in the abstract and leverage those abstract proofs in the concrete. I.e. we can be lazy. Who doesn't like that?
+
+A monad is another kind of algebraic /thing/: it is a type equipped with two functions that satisfy certain rules, just as vector spaces and rings are.
+
+** Requirements for a monad
+
+*** Type
+
+A monad is fundamentally a wrapper type. Just as you don't have a concrete instantiation of a ~List~ in any language, but rather a ~List<a>~ where ~a~ is any other type like ~Int~ or ~Nat~ or ~String~, thus it is with monads.
+
+(Hint: ~List~ is a monad!)
+
+You don't have to construct a monad for every type you want to wrap—that's the beauty of it all!
+
+*** Functions
+
+ - return :: This wraps a value into the monad.
+ - bind :: This threads operations on a monad together.
+
+*** Other nice functions
+
+The ~run~ function is a useful one that I didn't understand until recently: it pulls the value out of the monad.
+
+Why is it called ~run~? Because a monad can represent some /computation/ rather than a value. E.g. if I have a function with signature ~read_file :: String -> Maybe<String>~, I know this is going to give me something representing a computation that might fail. ~run~ will run that computation and give me the value, or raise an error.
+
+** Monad laws
+
+ - return A >>= K == (K A)
+ - >>= M return == M
+ - M >>= λx.((K x) >>= H) (M >>= K) >>= H
+
+If those hold, we have a monad.
+
+*** TODO be ready to explain those (Felleisen's talk and the LYAHFGG is good with this)
+
+* Monads IRL
+
+ - Rust
+ - Haskell (duh)
+ - Elixir's patterns
+
+** TODO Be ready with some excellent examples!
+
+* Composing monads (optional)
+
+# I could talk about monad transformers here and building flexible, modular interpreters from that
+
+* Research
+
+** Tutorials
+
+ - https://felleisen.org/matthias/4400-s20/lecture17.html (cps)
+ - https://felleisen.org/matthias/4400-s20/lecture28.html (monads)
+ - http://www.jerf.org/iri/post/2958 (jerf's excellent explanation)
+ - http://learnyouahaskell.com/a-fistful-of-monads
+ - https://en.wikipedia.org/wiki/Monad_(functional_programming)#Continuation_monad
+
+* Footnotes
+
+[fn:1] TIL: according to [[https://en.wikipedia.org/wiki/Vector_space][Wikipedia (Vector space)]], the scalar just has to be from a mathematical field.
