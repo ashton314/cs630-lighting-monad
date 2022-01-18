@@ -6,12 +6,14 @@
 
 (define datasets-path "/Users/ashton/School/2022_Winter/cs_630/presentations/monads/datasets/")
 
+;;; Define the server base
 (define-values (my-app req-url)
   (dispatch-rules
    [("") index]
    [("sum" (string-arg)) sum-dataset]
    [("find-even") find-even-dataset]))
 
+;;; Function to handle requests going to "/": just an index page
 (define (index req)
   (response/xexpr
    `(html (head (title "My app"))
@@ -22,6 +24,7 @@
                        `(li (a ([href ,(string-append "/sum/" ds)]) ,ds)))))
                 (a ([href "/find-even"]) "Find datasets with even sums")))))
 
+;;; Page showing the sum of all the data sets
 (define (sum-dataset req setname)
   (response/xexpr
    `(html (head (title "My app | sum | " ,setname))
@@ -32,6 +35,7 @@
                                (λ (sum)
                                  (ok (format "Dataset sum: ~a" sum))))))))))
 
+;;; Page listing which datasets sum to an even number
 (define (find-even-dataset req)
   (let (
         [datasets
@@ -50,6 +54,16 @@
                        ,(unpack (thread (sum-dataset-file? ds)
                                         (λ (sum) (ok (if (even? sum) "is even" "isn't even")))))))))))))
 
+;;; Sum up the enteries in a dataset file (but with error handling!)
+(define (sum-dataset-file? set-name)
+  (let ([full-path (build-path datasets-path set-name)])
+    (if (file-exists? full-path)
+        (let ([file-lines (file->lines full-path)])
+          (if (andmap looks-like-number? file-lines)
+              (ok (apply + (map string->number file-lines)))
+              (err "bad line in file")))
+        (err "no file"))))
+
 ;;; A struct to help us with error handing
 (struct ok (value) #:transparent)
 (struct err (message) #:transparent)
@@ -66,22 +80,6 @@
     [(ok val) (fn val)]
     [(err message) (err message)]))
 
-(define (sum-dataset-file? set-name)
-  (let ([full-path (build-path datasets-path set-name)])
-    (if (file-exists? full-path)
-        (let ([file-lines (file->lines full-path)])
-          (if (all? looks-like-number? file-lines)
-              (ok (apply + (map string->number file-lines)))
-              (err "bad line in file")))
-        (err "no file"))))
-
-(define (all? ? lst)
-  (if (null? lst)
-      #t
-      (if (? (car lst))
-          (all? ? (cdr lst))
-          #f)))
-
 ;;; Does this string look like a number to you?
 (define (looks-like-number? str)
   (not (not (string->number str))))
@@ -90,5 +88,3 @@
                #:port 8080
                #:launch-browser? #f
                #:servlet-regexp #rx"")
-
-

@@ -2,6 +2,13 @@
 #+AUTHOR: Ashton Wiersdorf
 #+DATE: 2022-01-18
 
+:PRESENTATION_SETUP:
+#+begin_src emacs-lisp
+  (straight-use-package 'keycast)
+  (keycast-mode)
+#+end_src
+:END:
+
 * Motivation
 
 Consider what this function does:
@@ -69,6 +76,24 @@ We would like to model these kinds of effects /orthogonal/ to the rest of our pr
 It's a way of slicing a program that most of us aren't used to. (OO hype still hasn't been flushed out of higher ed yet.)
 
 ** Example of a web server
+
+# Go through the three dataset files
+Say we have some [[file:datasets/][datasets]] that we want to publish. 
+
+Let's take a look at a simple web server:
+
+[[file:racket_webserver/1_basic_server.rkt][basic web server]]
+
+Notice the following:
+
+ - Outline of the server
+ - Helper function in ~sum-dataset-file~ that optimistically assumes that everything is a number
+
+Try it out!
+
+*** Adding rudimentary error handling
+
+
 
 * The naked monad
 
