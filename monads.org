@@ -166,10 +166,6 @@ You don't have to construct a monad for every type you want to wrap—that's the
 
 In our example, ~ok~ and ~err~ were constructors for what's typically called the ~Maybe~ monad.
 
-# Create a struct called Maybe
-
-*** TODO should I build this up in another file?
-
 *** Functions
 
  - return :: This wraps a value into the monad.
@@ -193,6 +189,12 @@ If those hold, we have a monad.
 
 *** TODO be ready to explain those (Felleisen's talk and the LYAHFGG is good with this)
 
+* Live Demo
+
+[[file:simple_monads.rkt]]
+
+# Build up the logging monad step-by-step
+
 * Monads IRL
 
  - Rust
@@ -208,6 +210,8 @@ If those hold, we have a monad.
     File.write(fh, "Howdy world!")
   end
 #+end_src
+
+You'll notice how this syntax looks very similar to the ~monadic-do~ that we built? Not sure if that was an intentional choice on the Elixir dev's part, but it sure seems like it.
 
 ** Example: Rust
 
