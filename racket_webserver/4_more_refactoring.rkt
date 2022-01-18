@@ -57,13 +57,12 @@
 
 ;;; Sum up the enteries in a dataset file (but with error handling!)
 (define (sum-dataset-file? set-name)
-  (let ([full-path (build-path datasets-path set-name)])
-    (if (file-exists? full-path)
-        (let ([file-lines (file->lines full-path)])
-          (if (andmap looks-like-number? file-lines)
-              (ok (apply + (map string->number file-lines)))
-              (err "bad line in file")))
-        (err "no file"))))
+  (thread (assert file-exists? (build-path datasets-path set-name) "no file")
+          (λ (full-path)
+            (thread (assert (λ (ls) (andmap looks-like-number? ls))
+                                 (file->lines full-path)
+                                 "bad line in file")
+                    (λ (lines) (ok (apply + (map string->number lines))))))))
 
 ;;; A struct to help us with error handing
 (struct ok (value) #:transparent)
@@ -80,6 +79,12 @@
   (match ok-or-err
     [(ok val) (fn val)]
     [(err message) (err message)]))
+
+;;; If the predicate is true, wrap with `ok`, otherwise, wrap with `err`
+(define (assert ? val err-mss)
+  (if (? val)
+      (ok val)
+      (err err-mss)))
 
 ;;; Does this string look like a number to you?
 (define (looks-like-number? str)
