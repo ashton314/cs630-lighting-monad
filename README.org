@@ -1,0 +1,9 @@
+#+TITLE: Intro to Monads
+#+AUTHOR: Ashton Wiersdorf
+#+DATE: 2022-01-18
+
+A brief introduction to monads.
+
+* Copyright
+
+All files copyright Ashton Wiersdorf 2022.
