@@ -2,12 +2,18 @@
 #+AUTHOR: Ashton Wiersdorf
 #+DATE: 2022-01-18
 
-:PRESENTATION_SETUP:
+* Presentation                                                                      :meta:
+
+:SETUP:
 #+begin_src emacs-lisp
   (straight-use-package 'keycast)
   (keycast-mode)
 #+end_src
 :END:
+
+If you need ediff help, see [[file:~/Sync/Dropbox/deft/2022-01-17.org][file:~/Sync/Dropbox/deft/2022-01-17.org]]
+
+See also [[Research]]
 
 * Motivation
 
@@ -89,11 +95,52 @@ Notice the following:
  - Outline of the server
  - Helper function in ~sum-dataset-file~ that optimistically assumes that everything is a number
 
-Try it out!
+[[http://localhost:8080/][Demo the site]]
 
 *** Adding rudimentary error handling
 
+# NOTE: copy the file and start modifying it. Use {{ [[file:racket_webserver/2_maybe_server.rkt][the reference implementation]] }} as a guide (that's a button)
 
+[[file:racket_webserver/2_maybe_server.rkt][Reference for v2]]
+
+Here we've introduced two structs ~ok~ and ~err~ that we use to represent error states. Since these are values, we can dispatch on them with ~match~ and ~ok?~ to change what we do.
+
+This gets us some benefits: our page doesn't blow up.
+
+[[http://localhost:8080/][Demo the site]]
+
+Let's look at the code though: 
+
+We've got all these calls to ~ok?~ within an ~if~. We could abstract that away.
+
+*** More abstraction
+
+We're going to create a new function called ~thread~. (Hint: this is ~bind~, but I like the name ~thread~ better.)
+
+#+begin_src racket
+  (define (thread ok-or-err fn)
+    (match ok-or-err
+      [(ok value) (fn value)]
+      [(err mss) (err mss)]))
+#+end_src
+
+# describe what ~match~ does
+# describe the contract of this function: threading values through
+
+**** Couldn't we just use exception handling?
+
+Yes, we could. Racket does support error handling. Two scenarios though:
+
+ 1. Imagine a you're working in a language /without/ error handling, or you're building a language and need to add some kind of computation abortion.
+ 2. The error-handling mechanism you're proposing we use is an /installed/ feature (Kimball, help here on the terminology!) of the language. We would like to reify it: i.e. express that feature in values so we can work with it.
+
+*** So what?
+
+We've pulled out the bit of code that has to worry about how to handle errors into its own function. (~thread~) Nothing else has to worry about that.
+
+This is the big idea behind monads and using them to model effects: we have some kind of computation we want to do something with (e.g. the lines of a file) with some computation we want to do along side (e.g. make sure it goes ok) and we let the monad handle that.
+
+We've built a monad! Albeit, it's still a little hard to see here. We're going to pull that out some more to help you see the patterns behind it all.
 
 * The naked monad
 
@@ -117,10 +164,18 @@ A monad is fundamentally a wrapper type. Just as you don't have a concrete insta
 
 You don't have to construct a monad for every type you want to wrap—that's the beauty of it all!
 
+In our example, ~ok~ and ~err~ were constructors for what's typically called the ~Maybe~ monad.
+
+# Create a struct called Maybe
+
+*** TODO should I build this up in another file?
+
 *** Functions
 
  - return :: This wraps a value into the monad.
- - bind :: This threads operations on a monad together.
+ - bind :: This threads operations on a monad together. This is what our ~thread~ function was doing.
+
+Notice how ~bind~ composes nicely with other ~bind~'s. I didn't make a very good example in the first case, but you can thread these together.
 
 *** Other nice functions
 
@@ -144,7 +199,19 @@ If those hold, we have a monad.
  - Haskell (duh)
  - Elixir's patterns
 
-** TODO Be ready with some excellent examples!
+** Example: Elixir
+
+#+begin_src elixir
+  with {:ok, tmp_dir} <- create_tmp_folder(),
+       {:ok, tmp_file} <- create_tmp_file(tmp_dir),
+       {:ok, fh} <- File.open(tmp_file, :write) do
+    File.write(fh, "Howdy world!")
+  end
+#+end_src
+
+** Example: Rust
+
+The ~Result~ type with the ~?~ optional chaining is a good example of a monad.
 
 * Composing monads (optional)
 
