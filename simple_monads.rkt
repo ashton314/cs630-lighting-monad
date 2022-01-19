@@ -64,9 +64,14 @@
     [(_ [val-sym <- gen] [val-syms <- gens] ... body)
      (>>= gen (λ (val-sym) (monadic-do [val-syms <- gens] ... body)))]))
 
+;;; And a helper function
+
+(define (return-audited value audit-message)
+  (AuditValue value (list (cons (current-inexact-milliseconds) audit-message))))
+
 (monadic-do
- [filename <- (AuditValue "datasets/foo" '("initial file name"))]
- [full-path <- (AuditValue (build-path base-path filename) '("prepended base path"))]
- (AuditValue (file->lines full-path) '("fetched lines from file")))
+ [filename <- (return-audited "datasets/foo" "initial file name")]
+ [full-path <- (return-audited (build-path base-path filename) "prepended base path")]
+ (return-audited (file->lines full-path) "fetched lines from file"))
 
 ;;; Debugging with: (expand #'(monadic-do [file-thing <- (+ 1 2)] [filename <- (+ file-thing 1)] (* filename 42)))
